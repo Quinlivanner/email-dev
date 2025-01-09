@@ -1,0 +1,65 @@
+Api:
+  email_count_per_page: 20
+  base_url_domain: http://localhost:8080
+  short_url_domain: http://localhost:8080
+  short_url_code_length: 17
+
+Aws:
+  s3_bucket: email-dev-huang
+  sqs_url: https://sqs.ap-northeast-2.amazonaws.com/021891615440/email_sqs_dev_huang
+  max_file_size: 35
+  file_expire_time: 7
+  config_region: ap-northeast-2
+  config_profile: ap-northeast-2-dev
+  smtp_host: email-smtp.ap-northeast-2.amazonaws.com
+  smtp_port: 587
+  smtp_username: XXXXX
+  smtp_password: XXXXX
+
+Psql:
+  host: 127.0.0.1
+  port: 5432
+  user: postgres
+  password: 'password'
+  database: emaildev
+  max_idle_conns: 10
+  max_open_conns: 20
+  conn_max_lifetime: 1
+  conn_max_idle_time: 1
+  log_level: error
+
+Jwt:
+  expired_time: 300
+  secret_key: 'Y51j^!ug!v#compassbesidegoescalm!M*CD*6$6R9wwintery@)9Uh0sKbp!Aacrosstry)sheltershow5$litself&mirrorrequire4carefullyfinal197R4yHXteasdCpractical'
+
+
+System:
+  host: 0.0.0.0
+  port: 7777
+  env: false
+
+Logger:
+  level: 'prod'
+  prefix: 'Email'
+  directory: /var/log
+  show_line: true
+  show_file_name: false
+
+DatabaseTableNames:
+  domains: domains
+  email_accounts: email_accounts
+  received_emails: received_emails
+  sent_emails: sent_emails
+  attachments: attachments
+
+AIRequestsApi:
+  ai_chat_api: https://xx.com
+  ai_chat_key: xxxx
+  ai_model_name: gpt-40
+  ai_prompt: ""
+
+Dovecot:
+  host: imap.net
+  port: 993
+
+
