@@ -59,7 +59,7 @@ func (l *limitListener) Accept() (net.Conn, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if l.current >= l.maxConnections {
+	if l.maxConnections > 0 && l.current >= l.maxConnections {
 		global.Log.Infof("max connections limit reached")
 		conn.Close()
 		return conn, nil
