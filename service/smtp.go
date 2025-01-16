@@ -217,7 +217,10 @@ func (s *Session) Logout() error {
 
 // AuthMechanisms 实现 AuthSession 接口
 func (s *Session) AuthMechanisms() []string {
-	return []string{"PLAIN"}
+	return []string{
+		"PLAIN",
+		"LOGIN",
+	}
 }
 
 // Auth 实现 AuthSession 接口
@@ -228,6 +231,11 @@ func (s *Session) Auth(mechanism string) (sasl.Server, error) {
 		return sasl.NewPlainServer(func(identity, username, password string) error {
 			return s.authenticate(username, password)
 		}), nil
+	case "LOGIN":
+		return NewLoginServer(func(username, password string) error {
+			return s.authenticate(username, password)
+		}), nil
+
 	default:
 		return nil, smtp.ErrAuthUnsupported
 	}
@@ -252,6 +260,48 @@ func (s *Session) authenticate(username, password string) error {
 	}
 	return errors.New("invalid password")
 
+}
+
+type LoginAuthenticator func(username, password string) error
+type loginState int
+
+const (
+	loginNotStarted loginState = iota
+	loginWaitingUsername
+	loginWaitingPassword
+)
+
+type loginServer struct {
+	state              loginState
+	username, password string
+	authenticate       LoginAuthenticator
+}
+
+func NewLoginServer(authenticator LoginAuthenticator) sasl.Server {
+	return &loginServer{authenticate: authenticator}
+}
+
+func (a *loginServer) Next(response []byte) (challenge []byte, done bool, err error) {
+	switch a.state {
+	case loginNotStarted:
+		if response == nil {
+			challenge = []byte("Username:")
+			break
+		}
+		a.state++
+		fallthrough
+	case loginWaitingUsername:
+		a.username = string(response)
+		challenge = []byte("Password:")
+	case loginWaitingPassword:
+		a.password = string(response)
+		err = a.authenticate(a.username, a.password)
+		done = true
+	default:
+		err = sasl.ErrUnexpectedClientResponse
+	}
+	a.state++
+	return
 }
 
 func SmtpServerInit() {
@@ -284,7 +334,7 @@ func SmtpServerInit() {
 	go func() {
 		s := serverConfig("0.0.0.0:17896")
 		global.Log.Infof("SMTP 服务器启动在端口 17896")
-		if err := s.ListenAndServe(); err != nil {
+		if err := SmtpListenAndServe(s, global.Config.System.SmtpMaxConnections); err != nil {
 			global.Log.Errorf("端口 17896 服务器错误: %v", err)
 		}
 	}()
@@ -293,7 +343,7 @@ func SmtpServerInit() {
 	go func() {
 		s := serverConfig("0.0.0.0:587")
 		global.Log.Infof("SMTP 服务器启动在端口 587")
-		if err := s.ListenAndServe(); err != nil {
+		if err := SmtpListenAndServe(s, global.Config.System.SmtpMaxConnections); err != nil {
 			global.Log.Errorf("端口 587 服务器错误: %v", err)
 		}
 	}()
